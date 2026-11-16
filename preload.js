@@ -10,7 +10,7 @@ contextBridge.exposeInMainWorld('api', {
   // 1. Detectar placas conectadas
   detectarPlacas: () => {
     return new Promise((resolve, reject) => {
-      const rutaCli = 'C:\\ArduinoCLI\\arduino-cli.exe'; // Asegúrate de que esta sea tu ruta
+      const rutaCli = 'arduino-cli'; // Asegúrate de que esta sea tu ruta
       
       exec(`"${rutaCli}" board list --format json`, execOptions, (error, stdout, stderr) => {
         if (error) {
