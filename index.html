@@ -2,207 +2,221 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mi IDE Arduino - MVP</title>
+    <title>Loop-i IDE</title>
     <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --bg-sidebar: #252526;
+            --bg-toolbar: #333333;
+            --bg-tab: #2d2d2d;
+            --bg-status: #007acc;
+            --text-main: #cccccc;
+            --text-muted: #858585;
+            --border-color: #3c3c3c;
+            --accent: #007acc;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            height: 100vh;
-            box-sizing: border-box;
-            margin: 0;
         }
-        .contenedor {
+
+        .toolbar {
+            height: 40px;
+            background-color: var(--bg-toolbar);
             display: flex;
-            gap: 20px;
+            align-items: center;
+            padding: 0 15px;
+            gap: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .toolbar select, .toolbar button {
+            background-color: var(--bg-dark);
+            color: white;
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: 2px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+        }
+        .toolbar button:hover { background-color: var(--bg-sidebar); }
+        
+        .btn-primary { background-color: #0e639c !important; border: none !important; }
+        .btn-primary:hover { background-color: #1177bb !important; }
+        .btn-success { background-color: #2e7d32 !important; border: none !important; }
+        .btn-success:hover { background-color: #388e3c !important; }
+        
+        #btnVerPines {
+            display: none;
+            background-color: #444;
+            border: 1px solid #555;
+        }
+        #btnVerPines:hover { background-color: #555; }
+
+        .main-container {
+            display: flex;
             flex: 1;
             min-height: 0;
-        }
-        .panel-izquierdo {
-            background-color: #252526;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            width: 450px; /* Un poco más ancho para la placa */
             position: relative;
-            display: flex;
+        }
+
+        .board-panel {
+            width: 450px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: none;
             flex-direction: column;
         }
-        .panel-derecho {
-            flex: 1;
-            background-color: #252526;
-            border-radius: 8px;
-            border: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+        .board-panel.active { display: flex; }
         
-        /* Cabecera del panel derecho y botones */
-        .panel-derecho h3 {
-            margin: 0;
+        .board-header {
             padding: 10px 15px;
-            background-color: #2d2d2d;
-            border-bottom: 1px solid #333;
-            font-size: 14px;
+            font-size: 12px;
+            background-color: var(--bg-toolbar);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--border-color);
         }
-        .botones-accion {
-            display: flex;
-            gap: 10px;
-        }
-        button {
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        button:disabled { cursor: not-allowed; opacity: 0.7; }
-        
-        #btnCompilar { background-color: #007acc; }
-        #btnCompilar:hover { background-color: #005999; }
-        
-        #btnSubir { background-color: #e67e22; }
-        #btnSubir:hover { background-color: #d35400; }
+        .close-board { cursor: pointer; color: var(--text-muted); font-weight: bold; }
+        .close-board:hover { color: white; }
 
-        /* Panel de Memoria */
-        .memory-panel {
-            padding: 15px;
-            background-color: #2d2d2d;
-            border-bottom: 1px solid #333;
-            display: none;
-        }
-        .memory-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-        .progress-bar {
-            flex: 1;
-            height: 12px;
-            background-color: #1e1e1e;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background-color: #4fc08d;
-            transition: width 0.3s ease;
-        }
-        #console-output {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #111;
-            color: #f55;
-            font-size: 12px;
-            max-height: 100px;
-            overflow-y: auto;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
-        /* Editor CodeMirror */
-        #editor-container { flex: 1; overflow: auto; }
-        .cm-editor { height: 100%; }
-        .cm-scroller { font-family: 'Courier New', Courier, monospace !important; }
-
-        /* Contenedor del SVG */
         #svg-container {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #1e1e1e;
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 10px;
+            background-color: var(--bg-dark);
+            margin: 10px;
+            border-radius: 4px;
             overflow: hidden;
             cursor: grab;
             position: relative;
+            border: 1px solid var(--border-color);
         }
-        #svg-container:active { cursor: grabbing; }
+        #svg-container svg { max-width: none; max-height: none; transform-origin: 0 0; transition: transform 0.1s ease-out; }
+
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
         
-        #svg-container svg {
-            max-width: none;
-            max-height: none;
-            transform-origin: 0 0;
-            transition: transform 0.1s ease-out;
+        .tabs { display: flex; background-color: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); }
+        .tab { padding: 8px 15px; background-color: var(--bg-dark); font-size: 13px; border-right: 1px solid var(--border-color); border-top: 1px solid var(--accent); }
+        
+        #editor-container { flex: 1; overflow: auto; }
+        .cm-editor { height: 100%; }
+        .cm-scroller { font-family: 'Consolas', 'Courier New', monospace !important; }
+
+        .console-output {
+            display: none; padding: 10px; background: #111; color: #f55; font-size: 12px;
+            max-height: 150px; overflow-y: auto; border-top: 1px solid var(--border-color);
+            font-family: monospace; white-space: pre-wrap;
         }
 
-        /* Menú flotante de configuración del pin */
+        .status-bar {
+            height: 24px; background-color: var(--bg-status); color: white;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 12px;
+        }
+        .status-item { cursor: pointer; padding: 0 5px; height: 100%; display: flex; align-items: center; }
+        .status-item:hover { background-color: rgba(255,255,255,0.2); }
+
+        .memory-popup {
+            display: none; position: absolute; bottom: 30px; right: 10px;
+            background-color: var(--bg-sidebar); border: 1px solid var(--border-color);
+            padding: 15px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 100; width: 300px;
+        }
+        .memory-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+        .progress-bar { flex: 1; height: 8px; background-color: #111; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background-color: #4fc08d; transition: width 0.3s ease; }
+
         .menu-pin {
-            display: none;
-            position: absolute;
-            background-color: #333;
-            border: 1px solid #555;
-            border-radius: 4px;
-            padding: 5px;
-            z-index: 10;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            display: none; position: absolute; background-color: var(--bg-sidebar);
+            border: 1px solid var(--border-color); border-radius: 4px; padding: 5px;
+            z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         }
         .menu-pin select {
-            background-color: #1e1e1e;
-            color: white;
-            border: 1px solid #444;
-            padding: 5px;
-            border-radius: 3px;
-            width: 100%;
-            cursor: pointer;
+            background-color: var(--bg-dark); color: white; border: 1px solid var(--border-color);
+            padding: 5px; border-radius: 2px; width: 100%; cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h1>Generador Visual + Compilador</h1>
-    
-    <div class="contenedor">
-        <!-- PANEL IZQUIERDO: Placa -->
-        <div class="panel-izquierdo">
-            <h3>Arduino UNO (Rueda del ratón para Zoom)</h3>
+
+    <div class="toolbar">
+        <label style="font-size: 12px; color: var(--text-muted);">Placa:</label>
+        <select id="selectPlaca">
+            <option value="">- Seleccionar placa -</option>
+            <option value="arduino-uno">Arduino UNO</option>
+        </select>
+
+        <label style="font-size: 12px; color: var(--text-muted); margin-left: 10px;">Puerto:</label>
+        <select id="selectPuerto">
+            <option value="">-- Buscando --</option>
+        </select>
+
+        <button id="btnVerPines">Ver pines</button>
+
+        <div style="flex: 1;"></div>
+        
+        <button id="btnCompilar" class="btn-primary">Compilar</button>
+        <button id="btnSubir" class="btn-success">Subir</button>
+    </div>
+
+    <div class="main-container">
+        <div class="board-panel" id="board-panel">
+            <div class="board-header">
+                <span id="tituloPlaca">Pin Planner</span>
+                <span class="close-board" id="close-board">Cerrar</span>
+            </div>
             <div id="svg-container">Cargando placa...</div>
         </div>
 
-        <!-- PANEL DERECHO: Editor y Memoria -->
-        <div class="panel-derecho">
-            <h3>
-                Código Generado (Editable)
-                <div class="botones-accion">
-                    <button id="btnCompilar">⚙️ Compilar</button>
-                    <button id="btnSubir">🚀 Subir a la Placa</button>
-                </div>
-            </h3>
-            
-            <div class="memory-panel" id="memory-panel">
-                <div class="memory-row">
-                    <span style="width: 120px;">Flash (Programa):</span>
-                    <div class="progress-bar"><div class="progress-fill" id="bar-flash"></div></div>
-                    <span id="text-flash" style="width: 80px; text-align: right;">0%</span>
-                </div>
-                <div class="memory-row">
-                    <span style="width: 120px;">SRAM (Variables):</span>
-                    <div class="progress-bar"><div class="progress-fill" id="bar-sram"></div></div>
-                    <span id="text-sram" style="width: 80px; text-align: right;">0%</span>
-                </div>
-                <pre id="console-output"></pre>
+        <div class="editor-area">
+            <div class="tabs">
+                <div class="tab">sketch.ino</div>
             </div>
-
             <div id="editor-container"></div>
+            <pre id="console-output" class="console-output"></pre>
         </div>
     </div>
 
-    <!-- Menú flotante oculto -->
+    <div class="status-bar">
+        <div class="status-left">
+            <span class="status-item" id="status-memory" title="Haz clic para ver el uso de memoria">Memoria: --</span>
+        </div>
+        <div class="status-right">
+            <span class="status-item" id="status-board">Desconectado</span>
+            <span class="status-item">UTF-8</span>
+            <span class="status-item">C++</span>
+        </div>
+    </div>
+
+    <div class="memory-popup" id="memory-panel">
+        <div class="memory-row">
+            <span style="width: 80px;">Flash:</span>
+            <div class="progress-bar"><div class="progress-fill" id="bar-flash"></div></div>
+            <span id="text-flash" style="width: 60px; text-align: right;">0%</span>
+        </div>
+        <div class="memory-row">
+            <span style="width: 80px;">SRAM:</span>
+            <div class="progress-bar"><div class="progress-fill" id="bar-sram"></div></div>
+            <span id="text-sram" style="width: 60px; text-align: right;">0%</span>
+        </div>
+    </div>
+
     <div class="menu-pin" id="menu-pin">
         <select id="selector-funcion">
             <option value="ninguno">-- Quitar configuración --</option>
@@ -216,237 +230,298 @@
         import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.1";
         import { cpp } from "https://esm.sh/@codemirror/lang-cpp@6.0.2";
         import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6.1.2";
+        import { generarCodigoCpp } from './generador.js';
 
-        // ==========================================
-        // 1. CONFIGURACIÓN DEL EDITOR
-        // ==========================================
         const editor = new EditorView({
             doc: "// Esperando configuración...\n",
-            extensions: [basicSetup, cpp(), oneDark],
+            extensions: [
+                basicSetup, cpp(), oneDark,
+                EditorView.updateListener.of((update) => {
+                    if (update.docChanged) {
+                        detectarPinesEnCodigo(update.state.doc.toString());
+                    }
+                })
+            ],
             parent: document.getElementById('editor-container')
         });
 
-        function setEditorText(nuevoTexto) {
-            editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: nuevoTexto } });
-        }
+        // ESTADO INTERNO
+        let estadoPines = {}; 
+        let funcionesDetectadas = {}; 
+        let estadoAnteriorCodigo = ""; // Para evitar bucles de actualización
 
-        // ==========================================
-        // 2. VARIABLES GLOBALES Y ESTADO
-        // ==========================================
-        const estadoPines = {}; 
         const menu = document.getElementById('menu-pin');
         const selector = document.getElementById('selector-funcion');
         const contenedorSVG = document.getElementById('svg-container');
         let pinActual = null;
-
-        // Variables para Zoom y Pan
-        let escala = 1.0;
-        let posX = 0;
-        let posY = 0;
-        let isDragging = false;
-        let startX, startY;
+        let escala = 1.0, posX = 0, posY = 0, isDragging = false, startX, startY;
 
         // ==========================================
-        // 3. CARGA DEL SVG Y CREACIÓN DE PINES
+        // LÓGICA BIDIRECCIONAL CON AUTO-LIMPIEZA
+        // ==========================================
+        function detectarPinesEnCodigo(textoCodigo) {
+            // Evitar bucles si el texto no ha cambiado realmente
+            if (textoCodigo === estadoAnteriorCodigo) return;
+            estadoAnteriorCodigo = textoCodigo;
+
+            if (!contenedorSVG.querySelector('svg')) return;
+
+            // 1. Limpiamos todo el estado visual y de memoria
+            const circulos = document.querySelectorAll('#svg-container circle');
+            circulos.forEach(c => {
+                c.setAttribute('fill', 'rgba(0, 255, 204, 0.1)');
+                c.setAttribute('stroke-width', '0.7'); 
+                c.dataset.currentColor = 'rgba(0, 255, 204, 0.1)';
+            });
+
+            funcionesDetectadas = {}; 
+            let pinesEncontrados = new Set();
+
+            // 2. Buscamos los pines (a la derecha del =)
+            const regexPin = /=\s*([A-Z0-9]+)\s*;/g;
+            let matchPin;
+            while ((matchPin = regexPin.exec(textoCodigo)) !== null) {
+                pinesEncontrados.add(matchPin[1]);
+            }
+
+            // 3. Inferir la función basándonos en el texto
+            for (const pin of pinesEncontrados) {
+                if (new RegExp(`pinMode\\([^,]+,\\s*OUTPUT\\)`, 'i').test(textoCodigo) || new RegExp(`digitalWrite`, 'i').test(textoCodigo)) {
+                    funcionesDetectadas[pin] = 'salida';
+                }
+                else if (new RegExp(`pinMode\\([^,]+,\\s*INPUT`, 'i').test(textoCodigo) || new RegExp(`digitalRead|analogRead`, 'i').test(textoCodigo)) {
+                    funcionesDetectadas[pin] = 'entrada';
+                }
+                else if (new RegExp(`analogWrite`, 'i').test(textoCodigo)) {
+                    funcionesDetectadas[pin] = 'pwm';
+                }
+                else {
+                    funcionesDetectadas[pin] = 'salida'; 
+                }
+            }
+
+            // 4. Pintamos los pines según su función inferida
+            pinesEncontrados.forEach(pin => {
+                const circulo = document.querySelector(`#svg-container circle[data-pin="${pin}"]`);
+                if (circulo) {
+                    const func = funcionesDetectadas[pin];
+                    let color = 'rgba(79, 192, 141, 0.6)'; // Salida
+                    if (func === 'entrada') color = 'rgba(0, 122, 204, 0.6)'; // Entrada
+                    if (func === 'pwm') color = 'rgba(215, 186, 125, 0.6)'; // PWM
+                    
+                    circulo.setAttribute('fill', color);
+                    circulo.dataset.currentColor = color;
+                    circulo.setAttribute('stroke-width', '1.5');
+                }
+            });
+
+            // 5. SINCRONIZACIÓN TOTAL: Reemplazamos el estado con lo que dice el código
+            // Esto libera el Pin 12 si lo moviste al 13, y viceversa.
+            estadoPines = {}; 
+            for (const pin of pinesEncontrados) {
+                estadoPines[pin] = funcionesDetectadas[pin];
+            }
+        }
+
+        // ==========================================
+        // CARGA DEL SVG
         // ==========================================
         async function cargarSVG() {
             try {
-                const respuesta = await fetch('arduino-uno.svg');
+                const idPlaca = document.getElementById('selectPlaca').value;
+                if (!idPlaca) return;
+
+                const jsonString = await window.api.cargarPerfilPlaca(idPlaca);
+                const perfil = JSON.parse(jsonString);
+
+                const respuesta = await fetch(perfil.imagen_svg);
                 const svgTexto = await respuesta.text();
                 contenedorSVG.innerHTML = svgTexto;
 
                 const svgElement = contenedorSVG.querySelector('svg');
-                
-                // Coordenadas EXACTAS extraídas de los agujeros <circle> del SVG
-                const pinesCoordenadas = [
-                    // Fila Superior (Digitales)
-                    { pin: '13', cx: 134.8, cy: 19 },
-                    { pin: '12', cx: 143.8, cy: 19 },
-                    { pin: '11', cx: 152.8, cy: 19 },
-                    { pin: '10', cx: 161.8, cy: 19 },
-                    { pin: '9',  cx: 170.8, cy: 19 },
-                    { pin: '8',  cx: 179.8, cy: 19 },
-                    { pin: '7',  cx: 194.2, cy: 19 },
-                    { pin: '6',  cx: 203.2, cy: 19 },
-                    { pin: '5',  cx: 212.2, cy: 19 },
-                    { pin: '4',  cx: 221.2, cy: 19 },
-                    { pin: '3',  cx: 230.2, cy: 19 },
-                    { pin: '2',  cx: 239.2, cy: 19 },
-                    { pin: '1',  cx: 248.2, cy: 19 }, // TX
-                    { pin: '0',  cx: 257.2, cy: 19 }, // RX
-
-                    // Fila Inferior (Analógicos)
-                    { pin: 'A0', cx: 212.2, cy: 190 },
-                    { pin: 'A1', cx: 221.2, cy: 190 },
-                    { pin: 'A2', cx: 230.2, cy: 190 },
-                    { pin: 'A3', cx: 239.2, cy: 190 },
-                    { pin: 'A4', cx: 248.2, cy: 190 },
-                    { pin: 'A5', cx: 257.2, cy: 190 }
-                ];
+                const capaVieja = svgElement.querySelector('#capa-interactiva');
+                if (capaVieja) capaVieja.remove();
 
                 const capaInteractiva = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                capaInteractiva.setAttribute("id", "capa-interactiva");
                 svgElement.appendChild(capaInteractiva);
 
-                pinesCoordenadas.forEach(p => {
+                perfil.pines.forEach(p => {
                     const circulo = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                    circulo.setAttribute('cx', p.cx);
-                    circulo.setAttribute('cy', p.cy);
+                    circulo.setAttribute('cx', p.cx); circulo.setAttribute('cy', p.cy);
                     circulo.setAttribute('r', 4.5);
-                    circulo.setAttribute('fill', 'rgba(0, 255, 204, 0.1)'); 
                     circulo.setAttribute('stroke', '#00ffcc');
+                    circulo.style.cursor = 'pointer'; circulo.setAttribute('data-pin', p.pin);
+                    circulo.setAttribute('fill', 'rgba(0, 255, 204, 0.1)');
                     circulo.setAttribute('stroke-width', '0.7');
-                    circulo.style.cursor = 'pointer';
-                    circulo.setAttribute('data-pin', p.pin);
+                    circulo.dataset.currentColor = 'rgba(0, 255, 204, 0.1)';
 
-                    circulo.addEventListener('mouseenter', () => circulo.setAttribute('fill', 'rgba(0, 255, 204, 0.5)'));
+                    // HOVER CORREGIDO
+                    circulo.addEventListener('mouseenter', () => {
+                        circulo.setAttribute('fill', 'rgba(255, 255, 255, 0.5)');
+                    });
                     circulo.addEventListener('mouseleave', () => {
-                        const estado = estadoPines[p.pin];
-                        if (estado === 'salida') circulo.setAttribute('fill', 'rgba(79, 192, 141, 0.6)');
-                        else if (estado === 'entrada') circulo.setAttribute('fill', 'rgba(0, 122, 204, 0.6)');
-                        else if (estado === 'pwm') circulo.setAttribute('fill', 'rgba(215, 186, 125, 0.6)');
-                        else circulo.setAttribute('fill', 'rgba(0, 255, 204, 0.1)');
+                        circulo.setAttribute('fill', circulo.dataset.currentColor);
                     });
 
                     circulo.addEventListener('click', (e) => {
                         e.stopPropagation();
                         pinActual = p.pin;
-                        const panelRect = document.querySelector('.panel-izquierdo').getBoundingClientRect();
+                        const panelRect = document.querySelector('.board-panel').getBoundingClientRect();
                         const rect = circulo.getBoundingClientRect();
                         
                         menu.style.display = 'block';
-                        menu.style.top = (rect.top - panelRect.top + 10) + 'px';
-                        menu.style.left = (rect.left - panelRect.left + 10) + 'px';
-                        selector.value = estadoPines[pinActual] || 'ninguno';
+                        menu.style.top = (rect.top - panelRect.top + 20) + 'px';
+                        menu.style.left = (rect.left - panelRect.left + 20) + 'px';
+                        selector.value = estadoPines[pinActual] || funcionesDetectadas[pinActual] || 'ninguno';
                     });
 
                     capaInteractiva.appendChild(circulo);
                 });
 
-            } catch (error) {
-                console.error("Error cargando el SVG:", error);
-                contenedorSVG.innerText = "Error al cargar arduino-uno.svg";
+                document.getElementById('tituloPlaca').textContent = `Pin Planner (${perfil.nombre})`;
+                detectarPinesEnCodigo(editor.state.doc.toString());
+
+            } catch (error) { 
+                console.error("Error cargando la placa:", error); 
+                contenedorSVG.innerHTML = "Error al cargar la placa.";
             }
         }
 
         // ==========================================
-        // 4. ZOOM Y PAN (ARRASTRAR)
+        // RESTO DE FUNCIONES
         // ==========================================
+        let placasAnteriores = "";
+        async function detectarHardware(isPolling = false) {
+            try {
+                const jsonPlacas = await window.api.detectarPlacas();
+                const datos = JSON.parse(jsonPlacas);
+                const selectPuerto = document.getElementById('selectPuerto');
+                const statusBoard = document.getElementById('status-board');
+                const selectPlaca = document.getElementById('selectPlaca');
+                const btnVerPines = document.getElementById('btnVerPines');
+                
+                let firmaActual = "";
+                if (datos.detected_ports && datos.detected_ports.length > 0) {
+                    firmaActual = datos.detected_ports.map(p => p.port.address).join(",");
+                }
+                if (isPolling && firmaActual === placasAnteriores) return;
+                placasAnteriores = firmaActual;
+
+                const puertoSeleccionado = selectPuerto.value;
+                selectPuerto.innerHTML = ''; 
+                
+                if (datos.detected_ports && datos.detected_ports.length > 0) {
+                    datos.detected_ports.forEach((p) => {
+                        const opt = document.createElement('option');
+                        opt.value = p.port.address;
+                        opt.textContent = p.port.address;
+                        if (p.port.address === puertoSeleccionado) opt.selected = true;
+                        selectPuerto.appendChild(opt);
+                    });
+                    if (!selectPuerto.value && selectPuerto.options.length > 0) selectPuerto.selectedIndex = 0;
+                    if (!selectPlaca.value) selectPlaca.value = 'arduino-uno';
+                    btnVerPines.style.display = 'block';
+                    statusBoard.textContent = `Arduino UNO en ${selectPuerto.value}`;
+                    statusBoard.style.color = "#4fc08d";
+                } else {
+                    selectPuerto.innerHTML = '<option value="">No hay puertos</option>';
+                    selectPlaca.value = "";
+                    btnVerPines.style.display = 'none';
+                    document.getElementById('board-panel').classList.remove('active');
+                    statusBoard.textContent = "Desconectado";
+                    statusBoard.style.color = "white";
+                }
+            } catch (error) { console.error("Error detectando hardware:", error); }
+        }
+
+        document.getElementById('selectPlaca').addEventListener('change', (e) => {
+            const idPlaca = e.target.value;
+            const btnVerPines = document.getElementById('btnVerPines');
+            if (idPlaca) btnVerPines.style.display = 'block';
+            else {
+                btnVerPines.style.display = 'none';
+                document.getElementById('board-panel').classList.remove('active');
+            }
+        });
+
+        document.getElementById('btnVerPines').addEventListener('click', () => {
+            const panel = document.getElementById('board-panel');
+            if (panel.classList.contains('active')) panel.classList.remove('active');
+            else {
+                panel.classList.add('active');
+                cargarSVG();  
+            }
+        });
+        
+        document.getElementById('close-board').addEventListener('click', () => {
+            document.getElementById('board-panel').classList.remove('active');
+        });
+
         contenedorSVG.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const factorZoom = e.deltaY < 0 ? 1.1 : 0.9;
-            escala *= factorZoom;
-            if (escala < 0.5) escala = 0.5;
-            if (escala > 5) escala = 5;
+            escala *= (e.deltaY < 0 ? 1.1 : 0.9);
+            escala = Math.max(0.5, Math.min(escala, 5));
             const svg = contenedorSVG.querySelector('svg');
             if (svg) svg.style.transform = `translate(${posX}px, ${posY}px) scale(${escala})`;
         });
 
         contenedorSVG.addEventListener('mousedown', (e) => {
-            if (e.target.tagName.toLowerCase() === 'circle') return; // No arrastrar si clica un pin
-            isDragging = true;
-            startX = e.clientX - posX;
-            startY = e.clientY - posY;
+            if (e.target.tagName.toLowerCase() === 'circle') return;
+            isDragging = true; startX = e.clientX - posX; startY = e.clientY - posY;
         });
-
         window.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-            posX = e.clientX - startX;
-            posY = e.clientY - startY;
+            posX = e.clientX - startX; posY = e.clientY - startY;
             const svg = contenedorSVG.querySelector('svg');
             if (svg) svg.style.transform = `translate(${posX}px, ${posY}px) scale(${escala})`;
         });
-
         window.addEventListener('mouseup', () => { isDragging = false; });
 
-        // ==========================================
-        // 5. LÓGICA DE GENERACIÓN DE CÓDIGO
-        // ==========================================
         selector.addEventListener('change', () => {
+            if (pinActual === null) return;
             const funcionElegida = selector.value;
-            if (funcionElegida === 'ninguno') delete estadoPines[pinActual]; 
-            else estadoPines[pinActual] = funcionElegida;
             
-            actualizarVisual();
-            generarCodigo();
+            // Si el usuario elige "ninguno", lo borramos del código.
+            // Si elige otra cosa, actualizamos el estado y regeneramos.
+            
+            if (funcionElegida === 'ninguno') {
+                delete estadoPines[pinActual]; 
+            } else {
+                estadoPines[pinActual] = funcionElegida;
+            }
+            
+            generarCodigo(); 
             menu.style.display = 'none';
         });
-
+        
         document.addEventListener('click', () => { menu.style.display = 'none'; });
         menu.addEventListener('click', (e) => { e.stopPropagation(); });
 
-        function actualizarVisual() {
-            const todosLosPines = document.querySelectorAll('#svg-container circle');
-            todosLosPines.forEach(circulo => {
-                const id = circulo.getAttribute('data-pin');
-                if (!id) return;
-                if (estadoPines[id] === 'salida') circulo.setAttribute('fill', 'rgba(79, 192, 141, 0.6)');
-                else if (estadoPines[id] === 'entrada') circulo.setAttribute('fill', 'rgba(0, 122, 204, 0.6)');
-                else if (estadoPines[id] === 'pwm') circulo.setAttribute('fill', 'rgba(215, 186, 125, 0.6)');
-                else circulo.setAttribute('fill', 'rgba(0, 255, 204, 0.1)');
-            });
-        }
-
         function generarCodigo() {
-            const pinesConfigurados = Object.keys(estadoPines);
-            if (pinesConfigurados.length === 0) {
-                setEditorText("// Esperando configuración...\n");
-                return;
+            const codigoActual = editor.state.doc.toString();
+            let codigoUsuario = "";
+            const marcadorInicio = "// --- ESCRIBE TU CÓDIGO PERSONALIZADO AQUÍ ABAJO ---\n";
+            const marcadorFin = "// === END PIN CONFIG ===";
+            
+            if (codigoActual.includes(marcadorFin)) {
+                const partes = codigoActual.split(marcadorFin);
+                let textoAbajo = partes[1];
+                textoAbajo = textoAbajo.replace(/^\s*\/\/ --- ESCRIBE TU CÓDIGO PERSONALIZADO AQUÍ ABAJO ---\n/, '');
+                codigoUsuario = marcadorInicio + textoAbajo;
+            } else {
+                codigoUsuario = marcadorInicio;
             }
 
-            let codigo = "// === BEGIN PIN CONFIG ===\n";
-            pinesConfigurados.forEach(pin => codigo += `const int PIN_${pin} = ${pin};\n`);
-            codigo += "\nvoid setup() {\n";
-            pinesConfigurados.forEach(pin => {
-                const func = estadoPines[pin];
-                if (func === 'salida') codigo += `  pinMode(PIN_${pin}, OUTPUT);\n`;
-                if (func === 'entrada') codigo += `  pinMode(PIN_${pin}, INPUT_PULLUP);\n`;
-                if (func === 'pwm') codigo += `  pinMode(PIN_${pin}, OUTPUT);\n`;
-            });
-            codigo += "}\n\nvoid loop() {\n";
-            pinesConfigurados.forEach(pin => {
-                const func = estadoPines[pin];
-                if (func === 'salida') codigo += `  // Parpadear Pin ${pin}\n  digitalWrite(PIN_${pin}, HIGH);\n  delay(500);\n  digitalWrite(PIN_${pin}, LOW);\n  delay(500);\n`;
-                if (func === 'entrada') codigo += `  // Leer Pin ${pin}\n  int valor_${pin} = digitalRead(PIN_${pin});\n`;
-                if (func === 'pwm') codigo += `  // Atenuar Pin ${pin}\n  for(int i=0; i<=255; i+=5) { analogWrite(PIN_${pin}, i); delay(10); }\n`;
-            });
-            codigo += "}\n\n// === END PIN CONFIG ===\n\n// --- ESCRIBE TU CÓDIGO PERSONALIZADO AQUÍ ABAJO ---\n";
-            setEditorText(codigo);
+            const nuevoCodigo = generarCodigoCpp(estadoPines, codigoUsuario);
+            // Actualizamos el texto del editor.
+            editor.dispatch({ changes: { from: 0, to: codigoActual.length, insert: nuevoCodigo } });
         }
 
-        // ==========================================
-        // 6. COMPILACIÓN Y MEMORIA
-        // ==========================================
-        document.getElementById('btnCompilar').addEventListener('click', async () => {
-            const btn = document.getElementById('btnCompilar');
-            btn.innerText = "⏳ Compilando...";
-            btn.disabled = true;
-            
-            const codigoActual = editor.state.doc.toString();
-            
-            try {
-                const cliPath = 'C:\\ArduinoCLI\\arduino-cli.exe'; // Tu ruta
-                const resultado = await window.api.compilar(codigoActual, cliPath);
-                
-                document.getElementById('memory-panel').style.display = 'block';
-                const consola = document.getElementById('console-output');
-                
-                if (resultado.success) {
-                    consola.style.display = 'none';
-                    parsearMemoria(resultado.stdout, resultado.stderr);
-                } else {
-                    consola.style.display = 'block';
-                    consola.textContent = resultado.stderr || resultado.stdout || resultado.error;
-                    document.getElementById('bar-flash').style.width = '0%';
-                    document.getElementById('bar-sram').style.width = '0%';
-                    document.getElementById('text-flash').textContent = 'Error';
-                    document.getElementById('text-sram').textContent = 'Error';
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                btn.innerText = "⚙️ Compilar";
-                btn.disabled = false;
-            }
+        // Resto de funciones (memoria, compilar, subir) idénticas...
+        document.getElementById('status-memory').addEventListener('click', () => {
+            const panel = document.getElementById('memory-panel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
         });
 
         function parsearMemoria(stdout, stderr) {
@@ -461,7 +536,6 @@
                 bar.style.backgroundColor = percent > 80 ? '#e74c3c' : '#4fc08d';
                 document.getElementById('text-flash').textContent = `${percent}% (${flashMatch[1]} b)`;
             }
-
             if (sramMatch) {
                 const percent = parseInt(sramMatch[2]);
                 const bar = document.getElementById('bar-sram');
@@ -469,59 +543,62 @@
                 bar.style.backgroundColor = percent > 80 ? '#e74c3c' : '#007acc';
                 document.getElementById('text-sram').textContent = `${percent}% (${sramMatch[1]} b)`;
             }
+            if (flashMatch || sramMatch) {
+                document.getElementById('status-memory').innerHTML = `Memoria: Flash ${flashMatch ? flashMatch[2] : 0}% | SRAM ${sramMatch ? sramMatch[2] : 0}%`;
+            }
         }
 
-        // ==========================================
-        // 7. SUBIR A LA PLACA
-        // ==========================================
-        document.getElementById('btnSubir').addEventListener('click', async () => {
-            const btnSubir = document.getElementById('btnSubir');
-            const btnCompilar = document.getElementById('btnCompilar');
-            
-            btnSubir.innerText = "⏳ Buscando puerto...";
-            btnSubir.disabled = true;
-            btnCompilar.disabled = true;
-            
+        document.getElementById('btnCompilar').addEventListener('click', async () => {
+            const btn = document.getElementById('btnCompilar');
+            btn.innerText = "Compilando..."; btn.disabled = true;
+            const codigoActual = editor.state.doc.toString();
+            const consola = document.getElementById('console-output');
+
             try {
-                const jsonPlacas = await window.api.detectarPlacas();
-                const datos = JSON.parse(jsonPlacas);
-                
-                if (datos.detected_ports && datos.detected_ports.length > 0) {
-                    const puerto = datos.detected_ports[0].port.address; // ej. "COM5"
-                    btnSubir.innerText = `⏳ Subiendo a ${puerto}...`;
-
-                    const codigoActual = editor.state.doc.toString();
-                    const cliPath = 'C:\\ArduinoCLI\\arduino-cli.exe'; // Tu ruta
-                    
-                    const resultado = await window.api.subirAPlaca(codigoActual, cliPath, puerto);
-                    
-                    const consola = document.getElementById('console-output');
-                    consola.style.display = 'block';
-
-                    if (resultado.success) {
-                        consola.style.color = '#4fc08d';
-                        consola.textContent = `✅ ¡Código subido con éxito a ${puerto}!`;
-                        parsearMemoria(resultado.stdout, resultado.stderr);
-                        document.getElementById('memory-panel').style.display = 'block';
-                    } else {
-                        consola.style.color = '#f55';
-                        consola.textContent = `❌ Error al subir:\n${resultado.stderr || resultado.stdout}`;
-                    }
+                const cliPath = 'C:\\ArduinoCLI\\arduino-cli.exe';
+                const resultado = await window.api.compilar(codigoActual, cliPath);
+                if (resultado.success) {
+                    consola.style.display = 'none';
+                    parsearMemoria(resultado.stdout, resultado.stderr);
                 } else {
-                    alert("No se detectó ninguna placa conectada. Revisa el cable USB.");
+                    consola.style.display = 'block';
+                    consola.textContent = resultado.stderr || resultado.stdout;
                 }
-            } catch (err) {
-                console.error(err);
-                alert("Error al intentar comunicarse con la placa.");
-            } finally {
-                btnSubir.innerText = "🚀 Subir a la Placa";
-                btnSubir.disabled = false;
-                btnCompilar.disabled = false;
+            } catch (err) { console.error(err); } finally {
+                btn.innerText = "Compilar"; btn.disabled = false;
             }
         });
 
-        // Iniciar aplicación
-        cargarSVG();
+        document.getElementById('btnSubir').addEventListener('click', async () => {
+            const btnSubir = document.getElementById('btnSubir');
+            const btnCompilar = document.getElementById('btnCompilar');
+            const puerto = document.getElementById('selectPuerto').value;
+            if (!puerto) { alert("Conecta tu Arduino y selecciona un puerto válido."); return; }
+
+            btnSubir.innerText = "Subiendo..."; btnSubir.disabled = true; btnCompilar.disabled = true;
+            const consola = document.getElementById('console-output');
+            
+            try {
+                const codigoActual = editor.state.doc.toString();
+                const cliPath = 'C:\\ArduinoCLI\\arduino-cli.exe';
+                const resultado = await window.api.subirAPlaca(codigoActual, cliPath, puerto);
+                
+                consola.style.display = 'block';
+                if (resultado.success) {
+                    consola.style.color = '#4fc08d';
+                    consola.textContent = `Subido con éxito a ${puerto}.\n`;
+                    parsearMemoria(resultado.stdout, resultado.stderr);
+                } else {
+                    consola.style.color = '#f55';
+                    consola.textContent = `Error al compilar o subir:\n${resultado.stderr || resultado.stdout}`;
+                }
+            } catch (err) { console.error(err); } finally {
+                btnSubir.innerText = "Subir"; btnSubir.disabled = false; btnCompilar.disabled = false;
+            }
+        });
+
+        detectarHardware(); 
+        setInterval(() => { detectarHardware(true); }, 2000);
     </script>
 </body>
 </html>

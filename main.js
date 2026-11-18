@@ -3,9 +3,9 @@ const path = require('path');
 
 function createWindow () {
   const win = new BrowserWindow({
-  width: 1000,
-  height: 700,
-  title: "Mi IDE Arduino",
+  width: 1200,
+  height: 800,
+  title: "Loop-i IDE",
   webPreferences: {
     preload: path.join(__dirname, 'preload.js'),
     contextIsolation: true,
@@ -16,7 +16,6 @@ function createWindow () {
 });
 
   win.loadFile('index.html');
-  win.webContents.openDevTools(); // <-- Esto abre la consola de desarrollo (útil para depurar)
 }
 
 app.whenReady().then(() => {

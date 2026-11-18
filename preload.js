@@ -3,14 +3,14 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// Opciones para evitar que se abra la consola de Windows cada vez que se ejecuta un comando
+// Opciones para evitar que se abra la consola de Windows al ejecutar comandos
 const execOptions = { windowsHide: true };
 
 contextBridge.exposeInMainWorld('api', {
   // 1. Detectar placas conectadas
   detectarPlacas: () => {
     return new Promise((resolve, reject) => {
-      const rutaCli = 'arduino-cli'; // Asegúrate de que esta sea tu ruta
+      const rutaCli = 'C:\\ArduinoCLI\\arduino-cli.exe'; // Tu ruta
       
       exec(`"${rutaCli}" board list --format json`, execOptions, (error, stdout, stderr) => {
         if (error) {
@@ -22,23 +22,35 @@ contextBridge.exposeInMainWorld('api', {
     });
   },
 
-  // 2. Compilar el código y ver la memoria
+  // 2. Leer el archivo JSON de la placa
+  cargarPerfilPlaca: (idPlaca) => {
+    return new Promise((resolve, reject) => {
+      const ruta = path.join(__dirname, 'placas', `${idPlaca}.json`);
+      
+      fs.readFile(ruta, 'utf8', (err, data) => {
+        if (err) {
+          console.error("Error leyendo JSON de placa:", err);
+          reject(err);
+          return;
+        }
+        resolve(data);
+      });
+    });
+  },
+
+  // 3. Compilar el código
   compilar: (codigo, rutaCli) => {
     return new Promise((resolve, reject) => {
-      // Crear carpeta temporal si no existe
       const dir = path.join(__dirname, 'temp_sketch');
       if (!fs.existsSync(dir)) fs.mkdirSync(dir);
       
-      // Guardar el código en el archivo .ino
       const sketchPath = path.join(dir, 'temp_sketch.ino');
       fs.writeFileSync(sketchPath, codigo);
 
       const cli = rutaCli || 'arduino-cli';
       
-      // Compilar para Arduino UNO
       exec(`"${cli}" compile -b arduino:avr:uno "${dir}"`, execOptions, (error, stdout, stderr) => {
         if (error) {
-          // Si falla, devolvemos el error para que lo muestre la consola
           resolve({ success: false, error: error.message, stdout, stderr });
           return;
         }
@@ -47,7 +59,7 @@ contextBridge.exposeInMainWorld('api', {
     });
   },
 
-  // 3. Subir el código a la placa
+  // 4. Subir a la placa
   subirAPlaca: (codigo, rutaCli, puerto) => {
     return new Promise((resolve, reject) => {
       const dir = path.join(__dirname, 'temp_sketch');
@@ -58,7 +70,6 @@ contextBridge.exposeInMainWorld('api', {
 
       const cli = rutaCli || 'arduino-cli';
       
-      // Compilar y subir usando el puerto (ej. COM5)
       exec(`"${cli}" compile -b arduino:avr:uno -p ${puerto} --upload "${dir}"`, execOptions, (error, stdout, stderr) => {
         if (error) {
           resolve({ success: false, error: error.message, stdout, stderr });
